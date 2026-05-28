@@ -14,11 +14,9 @@ st.set_page_config(page_title="Global Macroeconomic Intelligence Terminal", layo
 DATA_FILE = "gdp.csv"
 
 if os.path.exists(DATA_FILE):
-    # Load your actual uploaded data
     raw_df = pd.read_csv(DATA_FILE)
     
-    # Standardize column names to match the visual logic
-    # Transforming Country Name,Country Code,Year,Value to what the script expects
+    # Map your columns exactly to what the application expects
     df = raw_df.rename(columns={
         "Country Name": "Country Name",
         "Country Code": "ISO Code",
@@ -26,10 +24,9 @@ if os.path.exists(DATA_FILE):
         "Value": "GDP (USD)"
     })
     
-    # Generate some proxy metrics since raw GDP data only has "Value"
-    # This prevents the app from breaking on missing columns
+    # Calculate rolling growth percentage and make proxy data for missing items 
     df["GDP Growth Rate (%)"] = df.groupby("Country Name")["GDP (USD)"].pct_change().fillna(0) * 100
-    df["Population"] = 50_000_000  # Proxy baseline
+    df["Population"] = 50000000  
     df["GDP Per Capita (USD)"] = df["GDP (USD)"] / df["Population"]
     df["Inflation Rate (%)"] = np.random.uniform(1.5, 4.5, size=len(df))
 else:
@@ -51,7 +48,7 @@ def format_currency(val):
 # 2. ENTERPRISE UI STRUCTURE (Streamlit Native Framework)
 # ==============================================================================
 
-# Header (FIXED: Removed the incorrect 'unsafe_html' parameter)
+# Header
 st.markdown("""
 <div style="background: linear-gradient(90deg, #1e293b, #0f172a); border-bottom: 2px solid #14b8a6; padding: 24px; border-radius: 8px; text-align: left; margin-bottom: 25px;">
     <span style="color: #14b8a6; font-weight: 700; letter-spacing: 2px; font-size: 12px; text-transform: uppercase;">Institutional Grade Analytics Terminal</span>
@@ -76,19 +73,19 @@ with tab1:
     
     with col1:
         select_year = st.slider("Target Econometric Horizon", min_value=min_year, max_value=max_year, value=max_year)
+        
+        # FIXED: Changed 'choices' to 'options'
         target_metric = st.selectbox(
             "Target Analytical Evaluation Metric",
-            choices=["GDP (USD)", "GDP Growth Rate (%)", "GDP Per Capita (USD)", "Inflation Rate (%)"],
+            options=["GDP (USD)", "GDP Growth Rate (%)", "GDP Per Capita (USD)", "Inflation Rate (%)"],
             index=0
         )
         
-        # Calculate KPI Data
         year_df = df[df["Year"] == int(select_year)].copy()
         if not year_df.empty:
             avg_inflation = year_df["Inflation Rate (%)"].mean()
             total_world_gdp = year_df["GDP (USD)"].sum()
             
-            # FIXED: Using unsafe_allow_html=True
             st.markdown(f"""
             <div style='background: #1e293b; padding: 15px; border-radius: 8px; border-left: 5px solid #0d9488; color: white; margin-bottom: 10px;'>
                 <span style='font-size: 11px; opacity: 0.7; text-transform: uppercase;'>Global Sample Output Volume</span>
@@ -102,7 +99,6 @@ with tab1:
 
     with col2:
         if not year_df.empty:
-            # Map
             fig_map = px.choropleth(
                 year_df, locations="ISO Code", color=target_metric, hover_name="Country Name",
                 title=f"Global Heatmap Distribution: {target_metric} ({select_year})",
@@ -110,14 +106,11 @@ with tab1:
             )
             st.plotly_chart(fig_map, use_container_width=True)
             
-            # Pie & Bar side by side
             sub_col1, sub_col2 = st.columns(2)
             
             with sub_col1:
                 sorted_df = year_df.sort_values(by="GDP (USD)", ascending=False)
                 top_6 = sorted_df.head(6).copy()
-                others_gdp = sorted_df.iloc[6:]["GDP (USD)"].sum()
-                
                 fig_pie = px.pie(top_6, values="GDP (USD)", names="Country Name", title="Top Nations Economic Volume Dispersal", hole=0.5)
                 st.plotly_chart(fig_pie, use_container_width=True)
                 
@@ -141,8 +134,10 @@ with tab2:
     
     with col1:
         select_countries = st.multiselect("Entities of Interest", options=all_countries, default=default_selection)
-        metric_primary = st.selectbox("Primary Line Vector", choices=["GDP (USD)", "GDP Growth Rate (%)", "GDP Per Capita (USD)", "Inflation Rate (%)"], index=0)
-        metric_secondary = st.selectbox("Risk Bubble Parameter", choices=["GDP (USD)", "GDP Growth Rate (%)", "GDP Per Capita (USD)", "Inflation Rate (%)"], index=1)
+        
+        # FIXED: Changed 'choices' to 'options'
+        metric_primary = st.selectbox("Primary Line Vector", options=["GDP (USD)", "GDP Growth Rate (%)", "GDP Per Capita (USD)", "Inflation Rate (%)"], index=0)
+        metric_secondary = st.selectbox("Risk Bubble Parameter", options=["GDP (USD)", "GDP Growth Rate (%)", "GDP Per Capita (USD)", "Inflation Rate (%)"], index=1)
         
         start_time_slider = st.slider("Initial Horizon", min_value=min_year, max_value=max_year, value=min_year)
         end_time_slider = st.slider("Terminal Horizon", min_value=min_year, max_value=max_year, value=max_year)
@@ -155,14 +150,12 @@ with tab2:
             ].copy()
             
             if not slice_df.empty:
-                # Line Chart
                 fig_line = px.line(
                     slice_df, x="Year", y=metric_primary, color="Country Name", markers=True,
                     title=f"Historical Vector Tracking Profile: {metric_primary}"
                 )
                 st.plotly_chart(fig_line, use_container_width=True)
                 
-                # Bubble Chart
                 latest_slice = slice_df[slice_df["Year"] == int(end_time_slider)]
                 if latest_slice.empty: latest_slice = slice_df
                 
@@ -186,7 +179,8 @@ with tab3:
     col1, col2 = st.columns([1, 3])
     
     with col1:
-        single_country_select = st.selectbox("Target Single Sovereign Profile", choices=all_countries, index=0)
+        # FIXED: Changed 'choices' to 'options'
+        single_country_select = st.selectbox("Target Single Sovereign Profile", options=all_countries, index=0)
         st.info("**Analytical Guide:** A correlation matrix reveals relationships between economic metrics over time. Values near `+1.00` indicate perfect alignment, while values near `-1.00` reveal an inverse structural link.")
         
     with col2:
